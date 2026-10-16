@@ -181,8 +181,8 @@
     try { return decodeURIComponent(escape(u)); } catch (e) { return u; }
   }
 
-  var SALT_MAP = '2d20b1cf4dfb7a70';
-  var SALT_ENC = 'e43437ae6e598e27';
+  var SALT_MAP = '3606e87b290ba143';
+  var SALT_ENC = '25c3f5ab37b495d5';
 
   function fold(s) {
     s = String(s == null ? '' : s);
@@ -222,7 +222,7 @@
     return utf8decode(xorBytes(ct, ks));
   }
 
-  var FMAP = { n: 'name', c: 'cat', i: 'inst', z: 'zone', f: 'fee', a: 'feeAmt', r: 'report', o: 'room', e: 'roomFee', s: 'stay' };
+  var FMAP = { id: 'id', n: 'name', c: 'cat', i: 'inst', z: 'zone', f: 'fee', a: 'feeAmt', r: 'report', o: 'room', e: 'roomFee', s: 'stay' };
   function expand(o) {
     var r = {};
     for (var k in FMAP) r[FMAP[k]] = (o && o[k] != null) ? o[k] : '';
@@ -271,11 +271,11 @@ var LANG='zh';
 var I18N={
  zh:{title:'参会信息查询',sub:'第八届植物-生物互作国际会议',name:'姓名 / Name',code:'手机号后 4 位',codehint:'（无手机号者可不填）',
      btn:'查询',foot:'输入姓名即可查询；重名者需补填手机号后 4 位<br>Enter your name; if your name is shared, add the last 4 digits of your phone',
-     fields:{zone:'组别 / 分区',cat:'人员类型',inst:'单位',fee:'注册费',report:'报告类型',room:'订房',roomFee:'住宿费',stay:'入住 ~ 离店'},
+     fields:{id:'序号',zone:'组别 / 分区',cat:'人员类型',inst:'单位',fee:'注册费',report:'报告类型',room:'订房',roomFee:'住宿费',stay:'入住 ~ 离店'},
      needname:'请输入姓名',needphone:'该姓名有多位参会人，请补填手机号后 4 位再查询',nomatch:'姓名或手机号不匹配，请核对',notfound:'未找到该参会人，请确认姓名是否与报名一致',dataload:'数据加载失败，请刷新页面重试'},
  en:{title:'Attendee Info Lookup',sub:'The 8th International Conference on Plant-Biotic Interactions',name:'Name',code:'Last 4 digits of phone',codehint:'(optional if no phone registered)',
      btn:'Search',foot:'Enter your name; if your name is shared, add the last 4 digits of your phone',
-     fields:{zone:'Group / Zone',cat:'Participant Type',inst:'Institution',fee:'Registration Fee',report:'Presentation',room:'Accommodation',roomFee:'Room Fee',stay:'Check-in ~ Check-out'},
+     fields:{id:'No.',zone:'Group / Zone',cat:'Participant Type',inst:'Institution',fee:'Registration Fee',report:'Presentation',room:'Accommodation',roomFee:'Room Fee',stay:'Check-in ~ Check-out'},
      needname:'Please enter your name',needphone:'This name matches more than one attendee. Please add the last 4 digits of your phone.',nomatch:'Name and phone do not match. Please check.',notfound:'Not found. Please make sure the name matches registration.',dataload:'Failed to load data. Please refresh and retry.'}
 };
 function t(k){return I18N[LANG][k];}
@@ -313,7 +313,7 @@ function render(r){
   document.getElementById('r-zone').textContent=r.zone||'-';
   var F=t('fields');var html='';
   function line(k,v){if(v===undefined||v===null||v==='')return;html+='<div class="row"><div class="k">'+F[k]+'</div><div class="v">'+esc(v)+'</div></div>';}
-  line('zone',r.zone);line('cat',r.cat);line('inst',r.inst);
+  line('id',r.id);line('zone',r.zone);line('cat',r.cat);line('inst',r.inst);
   var fee=feeBadge(r.fee)+(r.feeAmt?(' <b>'+esc(r.feeAmt)+' 元</b>'):'');
   html+='<div class="row"><div class="k">'+F.fee+'</div><div class="v">'+fee+'</div></div>';
   line('report',r.report);
