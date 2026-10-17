@@ -181,8 +181,8 @@
     try { return decodeURIComponent(escape(u)); } catch (e) { return u; }
   }
 
-  var SALT_MAP = '3606e87b290ba143';
-  var SALT_ENC = '25c3f5ab37b495d5';
+  var SALT_MAP = '2993be9d7f3d45e1';
+  var SALT_ENC = '3b8a8cd786972fda';
 
   function fold(s) {
     s = String(s == null ? '' : s);
@@ -271,11 +271,11 @@ var LANG='zh';
 var I18N={
  zh:{title:'参会信息查询',sub:'第八届植物-生物互作国际会议',name:'姓名 / Name',code:'手机号后 4 位',codehint:'（无手机号者可不填）',
      btn:'查询',foot:'输入姓名即可查询；重名者需补填手机号后 4 位<br>Enter your name; if your name is shared, add the last 4 digits of your phone',
-     fields:{id:'序号',zone:'组别 / 分区',cat:'人员类型',inst:'单位',fee:'注册费',report:'报告类型',room:'订房',roomFee:'住宿费',stay:'入住 ~ 离店'},
+     fields:{id:'序号',zone:'组别 / 分区',cat:'人员类型',inst:'单位',fee:'缴费情况',report:'报告类型',room:'订房',roomFee:'住宿费',stay:'入住 ~ 离店'},
      needname:'请输入姓名',needphone:'该姓名有多位参会人，请补填手机号后 4 位再查询',nomatch:'姓名或手机号不匹配，请核对',notfound:'未找到该参会人，请确认姓名是否与报名一致',dataload:'数据加载失败，请刷新页面重试'},
  en:{title:'Attendee Info Lookup',sub:'The 8th International Conference on Plant-Biotic Interactions',name:'Name',code:'Last 4 digits of phone',codehint:'(optional if no phone registered)',
      btn:'Search',foot:'Enter your name; if your name is shared, add the last 4 digits of your phone',
-     fields:{id:'No.',zone:'Group / Zone',cat:'Participant Type',inst:'Institution',fee:'Registration Fee',report:'Presentation',room:'Accommodation',roomFee:'Room Fee',stay:'Check-in ~ Check-out'},
+     fields:{id:'No.',zone:'Group / Zone',cat:'Participant Type',inst:'Institution',fee:'Payment Status',report:'Presentation',room:'Accommodation',roomFee:'Room Fee',stay:'Check-in ~ Check-out'},
      needname:'Please enter your name',needphone:'This name matches more than one attendee. Please add the last 4 digits of your phone.',nomatch:'Name and phone do not match. Please check.',notfound:'Not found. Please make sure the name matches registration.',dataload:'Failed to load data. Please refresh and retry.'}
 };
 function t(k){return I18N[LANG][k];}
@@ -292,7 +292,7 @@ function applyI18N(){
 }
 var current=null;
 function esc(s){return String(s==null?'':s).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];});}
-function feeBadge(v){var s=String(v||'');if(s==='已缴'||s==='免注册费'||s==='内部转账')return '<span class="badge ok">'+esc(s)+'</span>';if(!s)return '<span class="badge no">-</span>';return '<span class="badge warn">'+esc(s)+'</span>';}
+function feeBadge(v){var s=String(v||'');if(s==='已缴'||s==='免注册费'||s==='内部转账'||s==='不需缴费')return '<span class="badge ok">'+esc(s)+'</span>';if(!s)return '<span class="badge no">-</span>';return '<span class="badge warn">'+esc(s)+'</span>';}
 function show(kind,txt){var m=document.getElementById('msg');m.className='msg '+kind;m.innerHTML=txt||'';if(!txt)m.className='msg';}
 function doQuery(){
   var name=document.getElementById('in-name').value.trim();
