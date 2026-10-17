@@ -33,6 +33,8 @@
   .row:last-child{border-bottom:0}
   .k{color:var(--mut);flex:0 0 auto}
   .v{text-align:right;font-weight:600;word-break:break-word}
+  .multi{font-size:12px;color:#a15c00;background:#fff4e5;border:1px solid #f2dcc0;border-radius:8px;padding:8px 10px;margin-bottom:10px}
+  .rsep{height:1px;background:var(--bd);margin:14px -16px}
   .badge{display:inline-block;font-size:12px;border-radius:6px;padding:1px 8px;font-weight:600}
   .ok{background:#e6f4ec;color:#1f7a4d}
   .warn{background:#fff4e5;color:#a15c00}
@@ -62,7 +64,6 @@
 
   <div class="result" id="result">
     <div class="card">
-      <div class="rhead"><div class="rname" id="r-name"></div><div class="rzone" id="r-zone"></div></div>
       <div id="r-rows"></div>
     </div>
   </div>
@@ -181,8 +182,8 @@
     try { return decodeURIComponent(escape(u)); } catch (e) { return u; }
   }
 
-  var SALT_MAP = '44536807bfb45359';
-  var SALT_ENC = '80e835f37a6b1b42';
+  var SALT_MAP = '9029bdf75377eb3e';
+  var SALT_ENC = '987988c819aa061b';
 
   function fold(s) {
     s = String(s == null ? '' : s);
@@ -229,19 +230,31 @@
     return r;
   }
 
+  // 命中一个索引键：值可能是单个密文串，也可能是数组（同名同手机 -> 多条，全部返回）
+  function hitEntry(table, n, cc) {
+    var v = table[mapKey(n, cc)];
+    if (!v) return null;
+    var list = (typeof v === 'string') ? [v] : v;
+    var out = [], j;
+    for (j = 0; j < list.length; j++) {
+      try { out.push(expand(JSON.parse(decryptEntry(list[j], n, cc)))); } catch (e) { }
+    }
+    return out.length ? out : null;
+  }
+
   // 在密文表中查本人：先按 姓名+手机末4位，再回退到仅姓名（无手机号者）
   function lookup(table, rawName, rawCode, nameSet) {
     var cands = candidates(rawName);
     if (!cands.length) return { status: 'needname' };
     var c = code4(rawCode), i, n, e;
     for (i = 0; i < cands.length; i++) {
-      n = cands[i]; e = table[mapKey(n, c)];
-      if (e) return { status: 'ok', rec: expand(JSON.parse(decryptEntry(e, n, c))) };
+      n = cands[i]; e = hitEntry(table, n, c);
+      if (e) return { status: 'ok', recs: e };
     }
     // 回退：无手机号者（只填了姓名，或错填了手机）——仅"无手机号"记录会有空码条目
     for (i = 0; i < cands.length; i++) {
-      n = cands[i]; e = table[mapKey(n, '')];
-      if (e) return { status: 'ok', rec: expand(JSON.parse(decryptEntry(e, n, ''))) };
+      n = cands[i]; e = hitEntry(table, n, '');
+      if (e) return { status: 'ok', recs: e };
     }
     // 姓名存在但条件不符：区分"需补手机号"与"手机号不对"
     if (nameSet) {
@@ -272,11 +285,13 @@ var I18N={
  zh:{title:'参会信息查询',sub:'第八届植物-生物互作国际会议',name:'姓名 / Name',code:'手机号后 4 位',codehint:'（无手机号者可不填）',
      btn:'查询',foot:'输入姓名即可查询；重名者需补填手机号后 4 位<br>Enter your name; if your name is shared, add the last 4 digits of your phone',
      fields:{id:'序号',zone:'组别 / 分区',cat:'人员类型',inst:'单位',fee:'缴费情况',report:'报告类型',room:'订房',roomFee:'住宿费',stay:'入住 ~ 离店'},
-     needname:'请输入姓名',needphone:'该姓名有多位参会人，请补填手机号后 4 位再查询',nomatch:'姓名或手机号不匹配，请核对',notfound:'未找到该参会人，请确认姓名是否与报名一致',dataload:'数据加载失败，请刷新页面重试'},
+     needname:'请输入姓名',needphone:'该姓名有多位参会人，请补填手机号后 4 位再查询',nomatch:'姓名或手机号不匹配，请核对',notfound:'未找到该参会人，请确认姓名是否与报名一致',dataload:'数据加载失败，请刷新页面重试',
+     multi:'匹配到 {n} 条同名记录，请按单位 / 序号核对本人信息'},
  en:{title:'Attendee Info Lookup',sub:'The 8th International Conference on Plant-Biotic Interactions',name:'Name',code:'Last 4 digits of phone',codehint:'(optional if no phone registered)',
      btn:'Search',foot:'Enter your name; if your name is shared, add the last 4 digits of your phone',
      fields:{id:'No.',zone:'Group / Zone',cat:'Participant Type',inst:'Institution',fee:'Payment Status',report:'Presentation',room:'Accommodation',roomFee:'Room Fee',stay:'Check-in ~ Check-out'},
-     needname:'Please enter your name',needphone:'This name matches more than one attendee. Please add the last 4 digits of your phone.',nomatch:'Name and phone do not match. Please check.',notfound:'Not found. Please make sure the name matches registration.',dataload:'Failed to load data. Please refresh and retry.'}
+     needname:'Please enter your name',needphone:'This name matches more than one attendee. Please add the last 4 digits of your phone.',nomatch:'Name and phone do not match. Please check.',notfound:'Not found. Please make sure the name matches registration.',dataload:'Failed to load data. Please refresh and retry.',
+     multi:'{n} records share this name. Please check the institution / No. to find yours.'}
 };
 function t(k){return I18N[LANG][k];}
 function toggleLang(){LANG=(LANG==='zh')?'en':'zh';document.getElementById('langBtn').textContent=(LANG==='zh')?'EN':'中文';applyI18N();}
@@ -303,26 +318,32 @@ function doQuery(){
   var r;
   try{ r=ICBPI.lookup(TABLE,name,code,NAMESET); }catch(e){ r={status:'notfound'}; }
   document.getElementById('result').style.display='none';
-  if(r.status==='ok'){current=r.rec;render(r.rec);}
+  if(r.status==='ok'){current=r.recs;render(r.recs);}
   else if(r.status==='needname'){show('err',t('needname'));}
   else if(r.status==='needphone'){show('info',t('needphone'));}
   else if(r.status==='nomatch'){show('err',t('nomatch'));}
   else{show('err',t('notfound'));}
 }
-function render(r){
-  document.getElementById('r-name').textContent=r.name||'';
-  document.getElementById('r-zone').textContent=r.zone||'-';
+function render(list){
+  if(!list || typeof list.push!=='function')list=[list];
   var F=t('fields');var html='';
-  function line(k,v){if(v===undefined||v===null||v==='')return;html+='<div class="row"><div class="k">'+F[k]+'</div><div class="v">'+esc(v)+'</div></div>';}
-  line('id',r.id);line('zone',r.zone);line('cat',r.cat);line('inst',r.inst);
-  var fee=feeBadge(r.fee);
-  var amt=r.feeAmt==null?'':String(r.feeAmt).trim();
-  if(amt)fee+=' <b>'+esc(amt)+(CNY(amt)?' 元':'')+'</b>';
-  html+='<div class="row"><div class="k">'+F.fee+'</div><div class="v">'+fee+'</div></div>';
-  line('report',r.report);
-  var rf=r.roomFee==null?'':String(r.roomFee).trim();
-  line('room', (r.room||'') + (rf?(' · '+rf+(CNY(rf)?' 元':'')):''));
-  line('stay',r.stay);
+  function row(k,v,acc){if(v===undefined||v===null||v==='')return acc;return acc+'<div class="row"><div class="k">'+F[k]+'</div><div class="v">'+esc(v)+'</div></div>';}
+  if(list.length>1)html+='<div class="multi">'+esc(t('multi').replace('{n}',list.length))+'</div>';
+  for(var i=0;i<list.length;i++){
+    var r=list[i];var s='';
+    if(i)html+='<div class="rsep"></div>';
+    html+='<div class="rblock"><div class="rhead"><div class="rname">'+esc(r.name||'')+'</div><div class="rzone">'+esc(r.zone||'-')+'</div></div>';
+    s=row('id',r.id,s);s=row('zone',r.zone,s);s=row('cat',r.cat,s);s=row('inst',r.inst,s);
+    var fee=feeBadge(r.fee);
+    var amt=r.feeAmt==null?'':String(r.feeAmt).trim();
+    if(amt)fee+=' <b>'+esc(amt)+(CNY(amt)?' 元':'')+'</b>';
+    s+='<div class="row"><div class="k">'+F.fee+'</div><div class="v">'+fee+'</div></div>';
+    s=row('report',r.report,s);
+    var rf=r.roomFee==null?'':String(r.roomFee).trim();
+    s=row('room',(r.room||'')+(rf?(' · '+rf+(CNY(rf)?' 元':'')):''),s);
+    s=row('stay',r.stay,s);
+    html+=s+'</div>';
+  }
   document.getElementById('r-rows').innerHTML=html;
   document.getElementById('result').style.display='block';
 }
