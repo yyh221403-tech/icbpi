@@ -181,8 +181,8 @@
     try { return decodeURIComponent(escape(u)); } catch (e) { return u; }
   }
 
-  var SALT_MAP = 'aa6797f6d8a0d8e4';
-  var SALT_ENC = '6ecd20c1c8948791';
+  var SALT_MAP = '44536807bfb45359';
+  var SALT_ENC = '80e835f37a6b1b42';
 
   function fold(s) {
     s = String(s == null ? '' : s);
@@ -292,6 +292,7 @@ function applyI18N(){
 }
 var current=null;
 function esc(s){return String(s==null?'':s).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];});}
+function CNY(v){return /^\d+(\.\d+)?$/.test(String(v).trim());}
 function feeBadge(v){var s=String(v||'');if(s==='已缴'||s==='免注册费'||s==='内部转账'||s==='不需缴费')return '<span class="badge ok">'+esc(s)+'</span>';if(!s)return '<span class="badge no">-</span>';return '<span class="badge warn">'+esc(s)+'</span>';}
 function show(kind,txt){var m=document.getElementById('msg');m.className='msg '+kind;m.innerHTML=txt||'';if(!txt)m.className='msg';}
 function doQuery(){
@@ -314,10 +315,13 @@ function render(r){
   var F=t('fields');var html='';
   function line(k,v){if(v===undefined||v===null||v==='')return;html+='<div class="row"><div class="k">'+F[k]+'</div><div class="v">'+esc(v)+'</div></div>';}
   line('id',r.id);line('zone',r.zone);line('cat',r.cat);line('inst',r.inst);
-  var fee=feeBadge(r.fee)+(r.feeAmt?(' <b>'+esc(r.feeAmt)+' 元</b>'):'');
+  var fee=feeBadge(r.fee);
+  var amt=r.feeAmt==null?'':String(r.feeAmt).trim();
+  if(amt)fee+=' <b>'+esc(amt)+(CNY(amt)?' 元':'')+'</b>';
   html+='<div class="row"><div class="k">'+F.fee+'</div><div class="v">'+fee+'</div></div>';
   line('report',r.report);
-  line('room', (r.room||'') + (r.roomFee?(' · '+r.roomFee+' 元'):''));
+  var rf=r.roomFee==null?'':String(r.roomFee).trim();
+  line('room', (r.room||'') + (rf?(' · '+rf+(CNY(rf)?' 元':'')):''));
   line('stay',r.stay);
   document.getElementById('r-rows').innerHTML=html;
   document.getElementById('result').style.display='block';
